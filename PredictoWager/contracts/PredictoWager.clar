@@ -359,6 +359,41 @@
   (+ accumulator (calculate-user-total-exposure-for-user market-id tx-sender))
 )
 
+;; Advanced market analytics and batch operations function
+;; This function provides comprehensive market statistics and allows batch querying
+;; Includes advanced analytics like probability calculations, liquidity ratios, and user exposure tracking
+(define-public (get-market-analytics-and-batch-positions (market-ids (list 10 uint)) (user principal))
+  (let (
+    (analytics-data (map get-single-market-analytics market-ids))
+    (user-positions-data (map get-user-position-for-id market-ids))
+    (market-volumes (map get-market-volume market-ids))
+    (market-liquidities (map get-market-liquidity market-ids))
+    (total-volume-across-markets (sum-uint-list market-volumes))
+    (active-count (count-active-markets market-ids))
+    (resolved-count (count-resolved-markets market-ids))
+    (total-user-exposure (calculate-total-user-exposure market-ids user))
+    (average-liquidity (if (> (len market-ids) u0)
+                         (/ (sum-uint-list market-liquidities) (len market-ids))
+                         u0))
+    (market-count (len market-ids))
+    (user-has-positions (> total-user-exposure u0))
+  )
+    (ok {
+      market-analytics: analytics-data,
+      user-positions: user-positions-data,
+      total-exposure: total-user-exposure,
+      active-markets: active-count,
+      resolved-markets: resolved-count,
+      total-volume: total-volume-across-markets,
+      average-liquidity: average-liquidity,
+      market-count: market-count,
+      user-has-positions: user-has-positions,
+      analytics-timestamp: block-height
+    })
+  )
+)
+
+
 ;; Get total number of markets - FIXED
 (define-read-only (get-total-markets)
   (var-get total-markets)
